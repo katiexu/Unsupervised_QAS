@@ -1,4 +1,5 @@
 # Unsupervised_QAS
 
 ## Run code
-Run _Circuit/circuit_manager.py_ to generate random circuits.
+1) Run _circuit/circuit_manager.py_ to generate random circuits.
+2) Run _models/pretrainning.py_ to do GVAE training.
