@@ -1,3 +1,4 @@
 # Unsupervised_QAS
 
-## Run Circuit/circuit_manager.py to generate random circuits.
+## Run code
+Run _Circuit/circuit_manager.py_ to generate random circuits.
