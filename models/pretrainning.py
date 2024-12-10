@@ -13,6 +13,8 @@ from nasbench.lib import graph_util
 from models.model import Model, VAEReconstructed_Loss, GVAE, Reconstructed_Loss
 from utils.utils import load_json, save_checkpoint_vae, preprocessing
 from utils.utils import get_val_acc_vae, is_valid_circuit
+import csv
+
 
 # def transform_operations(max_idx):
 #     transform_dict =  {0:'START', 1:'PauliX', 2:'PauliY', 3:'PauliZ', 4:'Hadamard', 5:'RX',
@@ -86,6 +88,8 @@ def pretraining_model(dataset, cfg, args):
         for _ in range(args.latent_points):
             z = torch.randn(X_adj_train[0].shape[0], args.dim).cuda()
             z = z * z_std + z_mean
+            if epoch == args.epochs - 1:
+                torch.save(z, 'z.pt')
             full_op, full_ad = model.decoder(z.unsqueeze(0))
             full_op = full_op.squeeze(0).cpu()
             ad = full_ad.squeeze(0).cpu()
@@ -102,6 +106,7 @@ def pretraining_model(dataset, cfg, args):
                 fingerprint = graph_util.hash_module(np.array(ad_decode), one_hot.numpy().tolist())
                 if fingerprint not in buckets:
                     buckets[fingerprint] = (ad_decode, one_hot.numpy().astype('int8').tolist())
+
         validity = validity_counter / args.latent_points
         print('Ratio of valid decodings from the prior: {:.4f}'.format(validity))
         print('Ratio of unique decodings from the prior: {:.4f}'.format(len(buckets) / (validity_counter+1e-8)))
@@ -110,7 +115,7 @@ def pretraining_model(dataset, cfg, args):
                 acc_ops_val, mean_corr_adj_val, mean_fal_pos_adj_val, acc_adj_val))
         print('epoch {}: average loss {:.5f}'.format(epoch, sum(loss_epoch)/len(loss_epoch)))
         loss_total.append(sum(loss_epoch) / len(loss_epoch))
-        save_checkpoint_vae(op_decode, ad_decode, model, optimizer, epoch, sum(loss_epoch) / len(loss_epoch), args.dim, args.name, args.dropout, args.seed)
+        save_checkpoint_vae(model, optimizer, epoch, sum(loss_epoch) / len(loss_epoch), args.dim, args.name, args.dropout, args.seed)
 
     print('loss for epochs: \n', loss_total)
 
@@ -143,6 +148,7 @@ if __name__ == '__main__':
                         help='latent points for validaty check (default: 10000)')
 
     args = parser.parse_args()
+    # args.epochs = 3
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
