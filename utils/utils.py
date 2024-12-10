@@ -32,12 +32,10 @@ def save_checkpoint(model, optimizer, epoch, loss, dim, name, dropout, seed):
     torch.save(checkpoint, f_path)
 
 
-def save_checkpoint_vae(op_decode, ad_decode, model, optimizer, epoch, loss, dim, name, dropout, seed):
+def save_checkpoint_vae(model, optimizer, epoch, loss, dim, name, dropout, seed):
     """Saves a checkpoint."""
     # Record the state
     checkpoint = {
-        'op_decode': op_decode,
-        'ad_decode': ad_decode,
         'epoch': epoch,
         'loss': loss,
         'model_state': model.state_dict(),
