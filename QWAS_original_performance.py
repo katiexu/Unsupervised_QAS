@@ -4,18 +4,14 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import time
-# from sklearn.metrics import accuracy_score, f1_score
 from datasets import MNISTDataLoaders, MOSIDataLoaders
 from FusionModel import QNet
-# from FusionModel import translator
 import os
 import csv
 import json
 
 from Arguments import Arguments
 import random
-import statistics
-import argparse
 
 
 def display(metrics):
@@ -88,7 +84,7 @@ def evaluate(model, data_loader, args):
 
 
 def Scheme(design, task, weight='base', epochs=None, verbs=None, save=None):
-    seed = 42
+    seed = 2
     random.seed(seed)
     np.random.seed(seed)
     torch.random.manual_seed(seed)
@@ -144,7 +140,7 @@ def Scheme(design, task, weight='base', epochs=None, verbs=None, save=None):
             with open('results.csv', 'w', newline='') as file:
                 writer = csv.writer(file)
                 writer.writerow(['design', 'alpha', 'epoch', 'train_loss', 'train_acc', 'val_acc', 'test_acc', 'best_test_acc'])
-        new_row = [design, alpha, epoch, train_loss[0], train_loss[1], val_loss_list[-1], metrics, best_test_acc]
+        new_row = [design, 'original', epoch, train_loss[0], train_loss[1], val_loss_list[-1], metrics, best_test_acc]
         with open('results.csv', 'a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(new_row)
@@ -163,17 +159,17 @@ def Scheme(design, task, weight='base', epochs=None, verbs=None, save=None):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Run script with alpha parameter.')
-    parser.add_argument('--alpha', type=float, required=True, help='Alpha parameter')
-    args = parser.parse_args()
+    with open('data_selected_circuits.json', 'r') as file:
+        selected_circuits = json.load(file)
 
-    # Get the alpha parameter
-    alpha = args.alpha
+    design = []
+    for i in range(len(selected_circuits[0]['op_list'])):
+        if selected_circuits[0]['op_list'][i][0] == 'C(U3)':
+            design.append((selected_circuits[0]['op_list'][i][0], [selected_circuits[0]['op_list'][i][1], selected_circuits[0]['op_list'][i][2]]))
+        elif selected_circuits[0]['op_list'][i][0] == 'U3':
+            design.append((selected_circuits[0]['op_list'][i][0], [selected_circuits[0]['op_list'][i][1]]))
+        else:
+            pass  # Skip 'START', 'END', and 'Identity' gates as they don't change the state
 
-    with open('circuits_with_noise.json', 'r') as file:
-        circuits_with_noise = json.load(file)
 
-    for i in range(len(circuits_with_noise)):
-        design = circuits_with_noise[i]
-        best_model, report = Scheme(design, 'MNIST', 'init', 30)
-
+    best_model, report = Scheme(design, 'MNIST', 'init', 30)
