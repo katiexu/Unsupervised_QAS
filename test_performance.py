@@ -151,8 +151,9 @@ def Scheme(design, task, weight='base', epochs=None, verbs=None, save=None):
 
     end = time.time()
     # best_model = model
-    metrics = evaluate(best_model, test_loader, args)
-    display(metrics)
+    # metrics = evaluate(best_model, test_loader, args)
+    # display(metrics)
+    display(best_test_acc)
     print("Running time: %s seconds" % (end - start))
     report = {'train_loss_list': train_loss_list, 'val_loss_list': val_loss_list,
               'best_val_loss': best_val_loss, 'mae': metrics}
