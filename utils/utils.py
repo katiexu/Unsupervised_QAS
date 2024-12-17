@@ -1,10 +1,8 @@
 import os
 import json
 import torch
-import numpy as np
-import circuit.var_config as vc
+import var_config as vc
 import torch.nn.functional as F
-import scipy.sparse as sp
 
 current_path = os.getcwd()
 
@@ -231,9 +229,10 @@ def stacked_spmm(A, B):
 
 def is_valid_circuit(adj, ops):
     # allowed_gates = ['PauliX', 'PauliY', 'PauliZ', 'Hadamard', 'RX', 'RY', 'RZ', 'CNOT', 'CZ', 'U3', 'SWAP']
-    allowed_gates = ['U3', 'C(U3)', 'Identity']     # QWAS
+    allowed_gates = ['U3', 'C(U3)', 'RX', 'RY', 'RZ', 'Identity']     # QWAS
     if len(adj) != len(ops) or len(adj[0]) != len(ops):
         return False
+    # !!! for adj_matrix==50x50, cannot find a valid circuit within 60 epochs !!!
     if ops[0] != 'START' or ops[-1] != 'END':
         return False
     for i in range(1, len(ops)-1):
