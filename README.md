@@ -13,7 +13,7 @@
 2) _QWAS_original_performance.py_:
    * Train the selected QWAS circuits (for 30 epochs) and obtain test acc on MNIST datasets for comparison.
 3) _gen_circuits_with_noise.py_:
-   * Generated new circuits by adding noises to latent representations of the selected QWAS circuits.
+   * Generate new circuits by adding noises to latent representations of the selected QWAS circuits.
 4) _test_performance.py_:
    * Train the generated new circuits (for 30 epochs) and obtain test acc on MNIST dataset.
 
