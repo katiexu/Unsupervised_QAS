@@ -169,14 +169,18 @@ class TQLayer(tq.QuantumModule):
 
         qdev = tq.QuantumDevice(n_wires=self.n_wires, bsz=bsz, device=x.device)
 
-        # encode input image with '4x4_ryzxy' gates
-        for j in range(self.n_wires):
-            self.uploading[j](qdev, x[:,j])
+        # # encode input image with '4x4_ryzxy' gates
+        # for j in range(self.n_wires):
+        #     self.uploading[j](qdev, x[:,j])
 
+        adjusted_i = 0
         for i in range(len(self.design)):
-            self.gates[i](qdev, wires=self.design[i][1])
-
-
+            if self.design[i][0] in ['U3', 'C(U3)']:
+                self.gates[adjusted_i](qdev, wires=self.design[i][1])
+                adjusted_i += 1
+            else:   # data uploading: if self.design[i][0] in ['RX', 'RY', 'RZ']
+                j = int(self.design[i][1][0])
+                self.uploading[j](qdev, x[:,j])
 
 
         # for layer in range(self.design['n_layers']):

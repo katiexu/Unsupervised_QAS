@@ -19,7 +19,7 @@ torch.cuda.manual_seed_all(1)
 
 
 def transform_operations(max_idx):
-    transform_dict =  {0:'START', 1:'U3', 2:'C(U3)', 3:'Identity', 4:'END'}
+    transform_dict =  {0:'START', 1:'U3', 2:'C(U3)', 3:'RX', 4:'RY', 5:'RZ', 6:'Identity', 7:'END'}
     ops = []
     for idx in max_idx:
         ops.append(transform_dict[idx.item()])
@@ -47,9 +47,12 @@ if __name__ == '__main__':
 
     print(f"Running script with alpha = {alpha}")
 
+    # alpha = 0.5
+
     # checkpoint = torch.load('../models/pretrained/dim-16/model-circuits_4_qubits.json.pt')
-    checkpoint = torch.load('model-circuits_4_qubits.json.pt')
-    model = GVAE((9, 32, 64, 128, 64, 32, 16), normalize=True, dropout=0.3, **configs[4]['GAE']).cuda()
+    checkpoint = torch.load('pretrained/dim-16/model-circuits_4_qubits.json.pt')
+    input_dim = 2 + len(vc.allowed_gates) + vc.num_qubits
+    model = GVAE((input_dim, 32, 64, 128, 64, 32, 16), normalize=True, dropout=0.3, **configs[4]['GAE']).cuda()
     model.load_state_dict(checkpoint['model_state'])
     # print(model)
 
@@ -77,11 +80,8 @@ if __name__ == '__main__':
     z = torch.cat(Z, dim=0)
 
     circuits_with_noise = []
-    # alpha = 0.5
+    # Generate 10 new circuits with noise
     while len(circuits_with_noise) < 10:
-        # Add Gaussian noise to latent z
-        # gaussian_noise = torch.randn_like(z)
-        # z_with_noise = z + gaussian_noise
         noise = torch.randn_like(z) * z.std() + z.mean()
         z_with_noise = z + alpha * noise
         model.eval()
@@ -108,7 +108,7 @@ if __name__ == '__main__':
                     values, indices = torch.topk(qubit_choices[i], 2)
                     indices = indices[values.argsort(descending=True)]
                     op_results.append((op_decode[i], indices.tolist()))
-                elif op_decode[i] == 'U3':
+                elif op_decode[i] in ['U3', 'RX', 'RY', 'RZ']:
                     values, indices = torch.topk(qubit_choices[i], 1)
                     op_results.append((op_decode[i], indices.tolist()))
                 else:

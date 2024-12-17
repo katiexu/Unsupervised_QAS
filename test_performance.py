@@ -88,7 +88,7 @@ def evaluate(model, data_loader, args):
 
 
 def Scheme(design, task, weight='base', epochs=None, verbs=None, save=None):
-    seed = 42
+    seed = 2
     random.seed(seed)
     np.random.seed(seed)
     torch.random.manual_seed(seed)
@@ -170,6 +170,8 @@ if __name__ == '__main__':
 
     # Get the alpha parameter
     alpha = args.alpha
+
+    # alpha = 0.5
 
     with open('circuits_with_noise.json', 'r') as file:
         circuits_with_noise = json.load(file)

@@ -7,15 +7,16 @@ import tqdm
 import torch
 import numpy as np
 import pennylane as qml
+import matplotlib.pyplot as plt
 import var_config as vc
 
 from tqdm import tqdm
 from pennylane import CircuitGraph
 from pennylane import numpy as pnp
 from torch.nn import functional as F
+import pickle
 import random
-import argparse
-import matplotlib.pyplot as plt
+
 
 random.seed(1)
 np.random.seed(1)
@@ -150,7 +151,6 @@ def translator(self, selected_single, selected_enta):
 
     return circuit_ops
 
-
 class CircuitManager:
 
     # class constructor
@@ -175,22 +175,27 @@ class CircuitManager:
         return gate_dict
 
     # Circuit generator function
-    def generate_circuits(self, single, enta):
+    def generate_circuits(self):
         unique_circuits = []
 
-        # def filter_start_with(search_space, start_value):
-        #     return [lst for lst in search_space if lst[0] == start_value]
+        with open('search_space_mnist_single', 'rb') as file:
+            search_space_single = pickle.load(file)
+        with open('search_space_mnist_enta', 'rb') as file:
+            search_space_enta = pickle.load(file)
+
+        def filter_start_with(search_space, start_value):
+            return [lst for lst in search_space if lst[0] == start_value]
 
         def generate_QWAS_circuits():
-            selected_single = single
-            selected_enta = enta
+            selected_single = []
+            selected_enta = []
 
-            # for start_value in range(1, self.num_qubits + 1):
-            #     candidates_single = filter_start_with(single, start_value)
-            #     selected_single.append(random.sample(candidates_single, 1)[0])
-            #
-            #     candidates_enta = filter_start_with(enta, start_value)
-            #     selected_enta.append(random.sample(candidates_enta, 1)[0])
+            for start_value in range(1, self.num_qubits + 1):
+                candidates_single = filter_start_with(search_space_single, start_value)
+                selected_single.append(random.sample(candidates_single, 1)[0])
+
+                candidates_enta = filter_start_with(search_space_enta, start_value)
+                selected_enta.append(random.sample(candidates_enta, 1)[0])
 
             circuit_ops = translator(self, selected_single, selected_enta)
 
@@ -297,8 +302,7 @@ def data_dumper(circuit_manager: CircuitManager, f_name: str = 'data.json'):
     """dump circuit DAG features."""
     circuit_features = []
     # file_path = os.path.join(current_path, f'circuit\\data\\{f_name}')
-    # file_path = os.path.join(current_path, f'data/{f_name}')
-    file_path = os.path.join('data_selected_circuits.json')
+    file_path = os.path.join(current_path, f'data/{f_name}')
     for i in range(circuit_manager.get_num_circuits):
         op_list, gate_matrix, adj_matrix = circuit_manager.get_gate_and_adj_matrix(circuits[i])
         circuit_features.append({'op_list': op_list, 'gate_matrix': gate_matrix, 'adj_matrix': adj_matrix.tolist()})
@@ -307,26 +311,10 @@ def data_dumper(circuit_manager: CircuitManager, f_name: str = 'data.json'):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Run script with input parameter.')
-    parser.add_argument('input', type=str, help='Input value')
-    args = parser.parse_args()
-
-    input_circuit = eval(args.input)
-    print(f"Running python file with input = {input_circuit}")
-
-    # input_circuit = [[[1, 1, 1, 1, 1, 0, 1, 1, 0], [4, 0, 1, 0, 1, 1, 0, 0, 1], [3, 1, 1, 0, 1, 0, 1, 1, 0], [2, 1, 1, 1, 1, 1, 1, 1, 1]], [[3, 3, 4, 3, 2], [2, 3, 3, 3, 1], [1, 2, 2, 2, 2], [4, 1, 1, 1, 1]]]
-    # input_circuit = [[[1, 1, 1, 1, 1, 1, 1, 1, 1], [2, 1, 1, 1, 1, 1, 1, 1, 1], [3, 1, 1, 1, 1, 1, 1, 1, 1], [4, 1, 1, 1, 1, 1, 1, 1, 1]], [[1, 2, 2, 2, 2], [2, 3, 3, 3, 3], [3, 4, 4, 4, 4], [4, 1, 1, 1, 1]]]
-
-    circuit_manager = CircuitManager(vc.num_qubits, 1, vc.num_layers, vc.allowed_gates)
-
-    sorted_input_circuit = [sorted(sub_list, key=lambda x: x[0]) for sub_list in input_circuit]
-
-    single = sorted_input_circuit[0]
-    enta = sorted_input_circuit[1]
-
-    circuits = circuit_manager.generate_circuits(single, enta)
-    # print("Number of unique circuits generated:", len(circuits))
-    # print("The first curcuit list: ", circuits[0])
+    circuit_manager = CircuitManager(vc.num_qubits, vc.num_circuits, vc.num_layers, vc.allowed_gates)
+    circuits = circuit_manager.generate_circuits()
+    print("Number of unique circuits generated:", len(circuits))
+    print("The first curcuit list: ", circuits[0])
     op_list, gate_matrix, adj_matrix = circuit_manager.get_gate_and_adj_matrix(circuits[0])
     print("The first curcuit info: ")
     print("op_list: ", op_list)
@@ -334,4 +322,4 @@ if __name__ == '__main__':
     print("adj_matrx: \n", adj_matrix)
     fig, ax = qml.draw_mpl(circuit_qnode)(circuits[0])
     plt.show()
-    data_dumper(circuit_manager, f_name=f'data_selected_circuits.json')
+    data_dumper(circuit_manager, f_name=f'data_{vc.num_qubits}_qubits.json')

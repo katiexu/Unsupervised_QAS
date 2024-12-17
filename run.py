@@ -14,15 +14,15 @@ alpha_values = [0.05, 0.5, 1]
 for input_data in input_circuits:
 
     input_str = str(input_data)
-    # 1) Run this file to translate QWAS design to desired Pennylane format
+    # 1) Translate the selected QWAS circuits into the format required for loading the GVAE model.
     subprocess.run(['python', 'translate_selected_circuits.py', input_str])
 
-    # 2) Run this file to evaluate test acc of the original QWAS circuit (without noise) with random initial weights
+    # 2) Run this file to train the selected QWAS circuits and obtain test acc on MNIST dataset for comparison.
     subprocess.run(['python', 'QWAS_original_performance.py'])
 
     for alpha in alpha_values:
-        # 3) Run this file to generate 10 new circuits by adding noises
+        # 3) Run this file to generate new circuits by adding noises to latent representations of the selected QWAS circuits.
         subprocess.run(['python', 'gen_circuits_with_noise.py', '--alpha', str(alpha)])
 
-        # 4) Run this file to evaluate test acc of the newly generated 10 circuits
+        # 4) Run this file to train the generated new circuits and obtain test acc on MNIST datasets.
         subprocess.run(['python', 'test_performance.py', '--alpha', str(alpha)])
