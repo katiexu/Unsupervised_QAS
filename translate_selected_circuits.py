@@ -309,13 +309,16 @@ def data_dumper(circuit_manager: CircuitManager, f_name: str = 'data.json'):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run script with input parameter.')
     parser.add_argument('input', type=str, help='Input value')
+    parser.add_argument('circuit_index', type=str, help='Circuit index value')
     args = parser.parse_args()
 
     input_circuit = eval(args.input)
+    circuit_index = args.circuit_index
     print(f"Running python file with input = {input_circuit}")
 
     # input_circuit = [[[1, 1, 1, 1, 1, 0, 1, 1, 0], [4, 0, 1, 0, 1, 1, 0, 0, 1], [3, 1, 1, 0, 1, 0, 1, 1, 0], [2, 1, 1, 1, 1, 1, 1, 1, 1]], [[3, 3, 4, 3, 2], [2, 3, 3, 3, 1], [1, 2, 2, 2, 2], [4, 1, 1, 1, 1]]]
-    # input_circuit = [[[1, 1, 1, 1, 1, 1, 1, 1, 1], [2, 1, 1, 1, 1, 1, 1, 1, 1], [3, 1, 1, 1, 1, 1, 1, 1, 1], [4, 1, 1, 1, 1, 1, 1, 1, 1]], [[1, 2, 2, 2, 2], [2, 3, 3, 3, 3], [3, 4, 4, 4, 4], [4, 1, 1, 1, 1]]]
+    # # input_circuit = [[[1, 1, 1, 1, 1, 1, 1, 1, 1], [2, 1, 1, 1, 1, 1, 1, 1, 1], [3, 1, 1, 1, 1, 1, 1, 1, 1], [4, 1, 1, 1, 1, 1, 1, 1, 1]], [[1, 2, 2, 2, 2], [2, 3, 3, 3, 3], [3, 4, 4, 4, 4], [4, 1, 1, 1, 1]]]
+    # circuit_index = 0
 
     circuit_manager = CircuitManager(vc.num_qubits, 1, vc.num_layers, vc.allowed_gates)
 
@@ -335,3 +338,8 @@ if __name__ == '__main__':
     fig, ax = qml.draw_mpl(circuit_qnode)(circuits[0])
     plt.show()
     data_dumper(circuit_manager, f_name=f'data_selected_circuits.json')
+
+    diagram_dir = f"circuit_diagrams/circuit_index_{circuit_index}"
+    if not os.path.exists(diagram_dir):
+        os.makedirs(diagram_dir)
+    fig.savefig(f"circuit_diagrams/circuit_index_{circuit_index}/original.jpg")

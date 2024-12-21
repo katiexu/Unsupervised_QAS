@@ -1,3 +1,4 @@
+import pennylane as qml
 import json
 import os
 import sys
@@ -5,8 +6,9 @@ sys.path.insert(0, os.getcwd())
 import torch
 import argparse
 import numpy as np
-import var_config as vc
+import matplotlib.pyplot as plt
 
+import var_config as vc
 from configs import configs
 from model import GVAE
 from utils.utils import preprocessing
@@ -40,14 +42,16 @@ def _build_dataset(dataset, list):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run script with alpha parameter.')
     parser.add_argument('--alpha', type=float, required=True, help='Alpha parameter')
+    parser.add_argument('circuit_index', type=str, help='Circuit index value')
     args = parser.parse_args()
 
     # Get the alpha parameter
     alpha = args.alpha
-
+    circuit_index = args.circuit_index
     print(f"Running script with alpha = {alpha}")
 
     # alpha = 0.5
+    # circuit_index = 0
 
     # checkpoint = torch.load('../models/pretrained/dim-16/model-circuits_4_qubits.json.pt')
     checkpoint = torch.load('pretrained/dim-16/model-circuits_4_qubits.json.pt')
@@ -82,7 +86,7 @@ if __name__ == '__main__':
     circuits_with_noise = []
     # Generate 10 new circuits with noise
     while len(circuits_with_noise) < 10:
-        noise = torch.randn_like(z) * z.std() + z.mean()
+        noise = torch.randn_like(z)
         z_with_noise = z + alpha * noise
         model.eval()
         full_op, full_ad = model.decoder(z_with_noise)
@@ -116,5 +120,35 @@ if __name__ == '__main__':
 
             circuits_with_noise.append(op_results)
 
-        with open('circuits_with_noise.json', 'w') as file:
-            json.dump(circuits_with_noise, file)
+    with open('circuits_with_noise.json', 'w') as file:
+        json.dump(circuits_with_noise, file)
+
+
+    # Draw circuit diagrams using PennyLane and save them as .jpg files
+    for i, op_results in enumerate(circuits_with_noise):
+        dev = qml.device('default.qubit', wires=4)
+        @qml.qnode(dev)
+        def circuit():
+            for gate, qubits in op_results:
+                if gate == 'RX':
+                    qml.RX(np.pi / 2, wires=qubits[0])
+                elif gate == 'RY':
+                    qml.RY(np.pi / 2, wires=qubits[0])
+                elif gate == 'RZ':
+                    qml.RZ(np.pi / 2, wires=qubits[0])
+                elif gate == 'U3':
+                    qml.U3(np.pi / 2, np.pi / 2, np.pi / 2, wires=qubits[0])
+                elif gate == 'C(U3)':
+                    qml.CNOT(wires=qubits)
+                elif gate == 'Identity':
+                    qml.Identity(wires=qubits[0])
+                else:
+                    pass
+            return qml.state()
+
+        fig, ax = qml.draw_mpl(circuit)()
+        # plt.show()
+        diagram_dir = f"circuit_diagrams/circuit_index_{circuit_index}"
+        if not os.path.exists(diagram_dir):
+            os.makedirs(diagram_dir)
+        fig.savefig(f"circuit_diagrams/circuit_index_{circuit_index}/alphs_{alpha}_circuit_{i}.jpg")
