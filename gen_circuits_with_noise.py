@@ -139,7 +139,7 @@ if __name__ == '__main__':
                 elif gate == 'U3':
                     qml.U3(np.pi / 2, np.pi / 2, np.pi / 2, wires=qubits[0])
                 elif gate == 'C(U3)':
-                    qml.CNOT(wires=qubits)
+                    qml.ctrl(qml.U3, control=qubits[0])(np.pi / 2, np.pi / 2, np.pi / 2, wires=qubits[1])
                 elif gate == 'Identity':
                     qml.Identity(wires=qubits[0])
                 else:
