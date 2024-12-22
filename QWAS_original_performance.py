@@ -112,9 +112,8 @@ def Scheme(design, task, weight='base', epochs=None, verbs=None, save=None):
     train_loss_list, val_loss_list = [], []
     best_val_loss = 0
 
+    best_test_acc = 0
     start = time.time()
-    best_test_acc = float('-inf')
-    best_test_acc_list = []
     for epoch in range(epochs):
         try:
             train(model, train_loader, optimizer, criterion, args)
@@ -125,12 +124,10 @@ def Scheme(design, task, weight='base', epochs=None, verbs=None, save=None):
         val_loss = evaluate(model, val_loader, args)
         val_loss_list.append(val_loss)
         metrics = evaluate(model, test_loader, args)
-        best_test_acc_list.append(metrics)
-        if metrics >= best_test_acc:
-            best_test_acc = metrics
-        val_loss = 0.5 *(val_loss + train_loss[-1])
+        val_loss = 0.5 * (val_loss + train_loss[-1])
         if val_loss > best_val_loss:
             best_val_loss = val_loss
+            best_test_acc = metrics
             if not verbs: print(epoch, train_loss, val_loss_list[-1], metrics, 'saving model')
             best_model = copy.deepcopy(model)
         else:
@@ -139,7 +136,8 @@ def Scheme(design, task, weight='base', epochs=None, verbs=None, save=None):
         if not os.path.isfile('results.csv'):
             with open('results.csv', 'w', newline='') as file:
                 writer = csv.writer(file)
-                writer.writerow(['design', 'alpha', 'epoch', 'train_loss', 'train_acc', 'val_acc', 'test_acc', 'best_test_acc'])
+                writer.writerow(
+                    ['design', 'alpha', 'epoch', 'train_loss', 'train_acc', 'val_acc', 'test_acc', 'best_test_acc'])
         new_row = [design, 'original', epoch, train_loss[0], train_loss[1], val_loss_list[-1], metrics, best_test_acc]
         with open('results.csv', 'a', newline='') as file:
             writer = csv.writer(file)
@@ -147,8 +145,8 @@ def Scheme(design, task, weight='base', epochs=None, verbs=None, save=None):
 
     end = time.time()
     # best_model = model
-    # metrics = evaluate(best_model, test_loader, args)
-    display(best_test_acc)
+    metrics = evaluate(best_model, test_loader, args)
+    display(metrics)
     print("Running time: %s seconds" % (end - start))
     report = {'train_loss_list': train_loss_list, 'val_loss_list': val_loss_list,
               'best_val_loss': best_val_loss, 'mae': metrics}
