@@ -142,7 +142,7 @@ def Scheme(design, task, weight='base', epochs=None, verbs=None, save=None):
                 writer = csv.writer(file)
                 writer.writerow(
                     ['design', 'alpha', 'epoch', 'train_loss', 'train_acc', 'val_acc', 'test_acc', 'best_test_acc'])
-        new_row = [design, 'original', epoch, train_loss[0], train_loss[1], val_loss_list[-1], metrics, best_test_acc]
+        new_row = [design, alpha, epoch, train_loss[0], train_loss[1], val_loss_list[-1], metrics, best_test_acc]
         with open('results.csv', 'a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(new_row)
