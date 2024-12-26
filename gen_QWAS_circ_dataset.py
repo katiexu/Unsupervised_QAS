@@ -45,16 +45,13 @@ def circuit_qnode(circuit_list, app=1, hamiltonian=None, edge=None):
         elif params[0] == 'Hadamard':
             qml.Hadamard(wires=params[1])
         elif params[0] == 'RX':
-            # param = pnp.array(params[2], requires_grad=True)
-            param = pnp.array(params[2], requires_grad=False)
+            param = pnp.array(params[2], requires_grad=True)
             qml.RX(param, wires=params[1])
         elif params[0] == 'RY':
-            # param = pnp.array(params[2], requires_grad=True)
-            param = pnp.array(params[2], requires_grad=False)
+            param = pnp.array(params[2], requires_grad=True)
             qml.RY(param, wires=params[1])
         elif params[0] == 'RZ':
-            # param = pnp.array(params[2], requires_grad=True)
-            param = pnp.array(params[2], requires_grad=False)
+            param = pnp.array(params[2], requires_grad=True)
             qml.RZ(param, wires=params[1])
         elif params[0] == 'CNOT':
             qml.CNOT(wires=[params[1], params[2]])
@@ -98,24 +95,25 @@ def circuit_qnode(circuit_list, app=1, hamiltonian=None, edge=None):
 
 def translator(self, selected_single, selected_enta):
     # Translate single-qubit gates into lists
-    single_columns = {i: [] for i in range(len(selected_single[0]) - 1)}
+    single_columns = {i: [] for i in range(vc.num_qubits)}
     for col_index in range(1, len(selected_single[0]), 2):
         for row_index in range(len(selected_single)):
-            if selected_single[row_index][col_index] == 0:
-                single_columns[col_index - 1].append(('Identity', row_index))
-            else:
-                gate = random.choice(['RX', 'RY', 'RZ'])
+            value1 = selected_single[row_index][col_index]
+            value2 = selected_single[row_index][col_index + 1]
+            combined = f"{value1}{value2}"
+            if combined == '00':
+                single_columns[(col_index - 1) / 2].append(('Identity', row_index))
+            elif combined == '01':
                 angle = np.random.uniform(0, 2 * np.pi)
-                single_columns[col_index - 1].append((gate, row_index, angle))
-    for col_index in range(2, len(selected_single[0]), 2):
-        for row_index in range(len(selected_single)):
-            if selected_single[row_index][col_index] == 0:
-                single_columns[col_index - 1].append(('Identity', row_index))
+                single_columns[(col_index - 1) / 2].append(('RX', row_index, angle))
+            elif combined == '10':
+                angle = np.random.uniform(0, 2 * np.pi)
+                single_columns[(col_index - 1) / 2].append(('RY', row_index, angle))
+            elif combined == '11':
+                angle = np.random.uniform(0, 2 * np.pi)
+                single_columns[(col_index - 1) / 2].append(('RZ', row_index, angle))
             else:
-                theta = np.random.uniform(0, 2 * np.pi)
-                phi = np.random.uniform(0, 2 * np.pi)
-                delta = np.random.uniform(0, 2 * np.pi)
-                single_columns[col_index - 1].append(('U3', row_index, theta, phi, delta))
+                pass
 
     # Translate entangled gates into lists
     enta_columns = {i: [] for i in range(len(selected_enta[0]) - 1)}
@@ -139,15 +137,10 @@ def translator(self, selected_single, selected_enta):
     #                           enumerate(item for item in enta_columns.items() if item[1])}
 
     # Re-order gate lists and generate final design
-    single_index = 0
-    enta_index = 0
     circuit_ops = []
     for layer in range(self.num_layers):
-        circuit_ops.extend(single_columns[single_index])
-        circuit_ops.extend(single_columns[single_index + 1])
-        circuit_ops.extend(enta_columns[enta_index])
-        single_index += 2
-        enta_index += 1
+        circuit_ops.extend(single_columns[layer])
+        circuit_ops.extend(enta_columns[layer])
 
     return circuit_ops
 

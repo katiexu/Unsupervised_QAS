@@ -21,7 +21,7 @@ torch.cuda.manual_seed_all(1)
 
 
 def transform_operations(max_idx):
-    transform_dict =  {0:'START', 1:'U3', 2:'C(U3)', 3:'RX', 4:'RY', 5:'RZ', 6:'Identity', 7:'END'}
+    transform_dict =  {0:'START', 1:'Identity', 2:'RX', 3:'RY', 4:'RZ', 5:'C(U3)', 6:'END'}
     ops = []
     for idx in max_idx:
         ops.append(transform_dict[idx.item()])
@@ -112,9 +112,16 @@ if __name__ == '__main__':
                     values, indices = torch.topk(qubit_choices[i], 2)
                     indices = indices[values.argsort(descending=True)]
                     op_results.append((op_decode[i], indices.tolist()))
-                elif op_decode[i] in ['U3', 'RX', 'RY', 'RZ']:
+                elif op_decode[i] == 'RX':
                     values, indices = torch.topk(qubit_choices[i], 1)
-                    op_results.append((op_decode[i], indices.tolist()))
+                    op_results.append(('U3', indices.tolist()))
+                elif op_decode[i] == 'RY':
+                    values, indices = torch.topk(qubit_choices[i], 1)
+                    op_results.append(('data', indices.tolist()))
+                elif op_decode[i] == 'RZ':
+                    values, indices = torch.topk(qubit_choices[i], 1)
+                    op_results.append(('data', indices.tolist()))
+                    op_results.append(('U3', indices.tolist()))
                 else:
                     pass  # Skip 'START', 'END', and 'Identity' gates as they don't change the state
 
@@ -130,18 +137,12 @@ if __name__ == '__main__':
         @qml.qnode(dev)
         def circuit():
             for gate, qubits in op_results:
-                if gate == 'RX':
-                    qml.RX(np.pi / 2, wires=qubits[0])
-                elif gate == 'RY':
-                    qml.RY(np.pi / 2, wires=qubits[0])
-                elif gate == 'RZ':
-                    qml.RZ(np.pi / 2, wires=qubits[0])
+                if gate == 'data':    # Use RX gate to represent a data uploading
+                    qml.Hadamard( wires=qubits[0])
                 elif gate == 'U3':
                     qml.U3(np.pi / 2, np.pi / 2, np.pi / 2, wires=qubits[0])
                 elif gate == 'C(U3)':
                     qml.ctrl(qml.U3, control=qubits[0])(np.pi / 2, np.pi / 2, np.pi / 2, wires=qubits[1])
-                elif gate == 'Identity':
-                    qml.Identity(wires=qubits[0])
                 else:
                     pass
             return qml.state()

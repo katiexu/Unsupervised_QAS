@@ -175,8 +175,13 @@ if __name__ == '__main__':
     for i in range(len(selected_circuits[0]['op_list'])):
         if selected_circuits[0]['op_list'][i][0] == 'C(U3)':
             design.append((selected_circuits[0]['op_list'][i][0], [selected_circuits[0]['op_list'][i][1], selected_circuits[0]['op_list'][i][2]]))
-        elif selected_circuits[0]['op_list'][i][0] in ['U3', 'RX', 'RY', 'RZ']:
-            design.append((selected_circuits[0]['op_list'][i][0], [selected_circuits[0]['op_list'][i][1]]))
+        elif selected_circuits[0]['op_list'][i][0] == 'RX':
+            design.append(('U3', [selected_circuits[0]['op_list'][i][1]]))
+        elif selected_circuits[0]['op_list'][i][0] == 'RY':
+            design.append(('data', [selected_circuits[0]['op_list'][i][1]]))
+        elif selected_circuits[0]['op_list'][i][0] == 'RZ':
+            design.append(('data', [selected_circuits[0]['op_list'][i][1]]))
+            design.append(('U3', [selected_circuits[0]['op_list'][i][1]]))
         else:
             pass  # Skip 'START', 'END', and 'Identity' gates as they don't change the state
 

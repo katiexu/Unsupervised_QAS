@@ -24,7 +24,7 @@ from utils.utils import get_val_acc_vae, is_valid_circuit
 #     return ops
 
 def transform_operations(max_idx):
-    transform_dict =  {0:'START', 1:'U3', 2:'C(U3)', 3:'RX', 4:'RY', 5:'RZ', 6:'Identity', 7:'END'}
+    transform_dict =  {0:'START', 1:'Identity', 2:'RX', 3:'RY', 4:'RZ', 5:'C(U3)', 6:'END'}
     ops = []
     for idx in max_idx:
         ops.append(transform_dict[idx.item()])
@@ -87,8 +87,8 @@ def pretraining_model(dataset, cfg, args):
         for _ in range(args.latent_points):
             z = torch.randn(X_adj_train[0].shape[0], args.dim).cuda()
             z = z * z_std + z_mean
-            if epoch == args.epochs - 1:
-                torch.save(z, 'z.pt')
+            # if epoch == args.epochs - 1:
+            #     torch.save(z, 'z.pt')
             full_op, full_ad = model.decoder(z.unsqueeze(0))
             full_op = full_op.squeeze(0).cpu()
             ad = full_ad.squeeze(0).cpu()

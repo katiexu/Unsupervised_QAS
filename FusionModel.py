@@ -178,7 +178,7 @@ class TQLayer(tq.QuantumModule):
             if self.design[i][0] in ['U3', 'C(U3)']:
                 self.gates[adjusted_i](qdev, wires=self.design[i][1])
                 adjusted_i += 1
-            else:   # data uploading: if self.design[i][0] in ['RX', 'RY', 'RZ']
+            else:   # data uploading: if self.design[i][0] == 'data'
                 j = int(self.design[i][1][0])
                 self.uploading[j](qdev, x[:,j])
 
