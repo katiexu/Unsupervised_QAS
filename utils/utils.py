@@ -229,7 +229,7 @@ def stacked_spmm(A, B):
 
 def is_valid_circuit(adj, ops):
     # allowed_gates = ['PauliX', 'PauliY', 'PauliZ', 'Hadamard', 'RX', 'RY', 'RZ', 'CNOT', 'CZ', 'U3', 'SWAP']
-    allowed_gates = ['U3', 'C(U3)', 'RX', 'RY', 'RZ', 'Identity']     # QWAS with data uploading
+    allowed_gates = ['Identity', 'RX', 'RY', 'RZ', 'C(U3)']    # QWAS with data uploading
     if len(adj) != len(ops) or len(adj[0]) != len(ops):
         return False
     if ops[0] != 'START' or ops[-1] != 'END':
