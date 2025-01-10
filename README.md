@@ -1,4 +1,4 @@
-# Unsupervised_QAS for QWAS with data uploading function
+# Unsupervised_QAS for QWAS with data uploading function (data & CU3 combined)
 
 ## Main tasks
 ### Part 1: Pretraining
