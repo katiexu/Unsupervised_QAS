@@ -46,6 +46,22 @@ def save_checkpoint_vae(model, optimizer, epoch, loss, dim, name, dropout, seed)
     f_path = os.path.join(dir_name, 'model-{}.pt'.format(name))
     torch.save(checkpoint, f_path)
 
+def save_checkpoint_vae_path_encoding(model, optimizer, epoch, loss, dim, name, dropout, seed):
+    """Saves a checkpoint."""
+    # Record the state
+    checkpoint = {
+        'epoch': epoch,
+        'loss': loss,
+        'model_state': model.state_dict(),
+        'optimizer_state': optimizer.state_dict(),
+    }
+    # Write the checkpoint
+    dir_name = 'pretrained/dim-{}-path-encoding'.format(dim)
+    if not os.path.exists(dir_name):
+        os.makedirs(dir_name)
+    f_path = os.path.join(dir_name, 'model-{}.pt'.format(name))
+    torch.save(checkpoint, f_path)
+
 def normalize_adj(A):
     # Compute the sum of each row and column in A
     sum_A_dim1 = A.sum(dim=1)
@@ -205,7 +221,7 @@ def get_val_acc_vae(model, cfg, X_adj, X_ops, indices):
         # preprocessing
         adj, ops, prep_reverse = preprocessing(adj, ops, **cfg['prep'])
         # forward
-        ops_recon, adj_recon,mu, logvar = model.forward(ops, adj)
+        ops_recon, adj_recon, mu, logvar = model.forward(ops, adj)
         # reverse preprocessing
         adj_recon, ops_recon = prep_reverse(adj_recon, ops_recon)
         adj, ops = prep_reverse(adj, ops)
@@ -216,6 +232,35 @@ def get_val_acc_vae(model, cfg, X_adj, X_ops, indices):
         correct_adj_ave += correct_adj * len(ind)/len(indices)
 
     return correct_ops_ave, mean_correct_adj_ave, mean_false_positive_adj_ave, correct_adj_ave
+
+
+def get_val_acc_vae_path_encoding(model, cfg, X_adj, X_ops, indices):
+    model.eval()
+    bs = 500
+    chunks = len(X_adj) // bs
+    if len(X_adj) % bs > 0:
+        chunks += 1
+    X_adj_split = torch.split(X_adj, bs, dim=0)
+    X_ops_split = torch.split(X_ops, bs, dim=0)
+    indices_split = torch.split(indices, bs, dim=0)
+    correct_ops_ave, mean_correct_adj_ave, mean_false_positive_adj_ave, correct_adj_ave, acc_ave = 0, 0, 0, 0, 0
+    for i, (adj, ops, ind) in enumerate(zip(X_adj_split, X_ops_split, indices_split)):
+        adj, ops = adj.cuda(), ops.cuda()
+        # preprocessing
+        adj, ops, prep_reverse = preprocessing(adj, ops, **cfg['prep'])
+        # forward
+        ops_recon, adj_recon, mu, logvar, adjusted_ops_recon, adjusted_adj_recon = model.forward(ops, adj)
+        # reverse preprocessing
+        adj_recon, ops_recon = prep_reverse(adj_recon, ops_recon)
+        adj, ops = prep_reverse(adj, ops)
+        correct_ops, mean_correct_adj, mean_false_positive_adj, correct_adj = get_accuracy((ops_recon, adj_recon), (ops, adj))
+        correct_ops_ave += correct_ops * len(ind)/len(indices)
+        mean_correct_adj_ave += mean_correct_adj * len(ind)/len(indices)
+        mean_false_positive_adj_ave += mean_false_positive_adj * len(ind)/len(indices)
+        correct_adj_ave += correct_adj * len(ind)/len(indices)
+
+    return correct_ops_ave, mean_correct_adj_ave, mean_false_positive_adj_ave, correct_adj_ave
+
 
 def stacked_mm(A, B):
     assert A.dim()==3
