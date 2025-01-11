@@ -40,6 +40,11 @@ class VAEncoder(nn.Module):
         self.conv_ops = nn.Conv1d(dims[0], dims[0], kernel_size=5, stride=3, padding=0)
         self.conv_adj = nn.Conv2d(1, 1, kernel_size=(5, 5), stride=(3, 3), padding=0)
 
+        self.fc_ops = nn.Linear(34, 10)
+        self.fc_adj = nn.Linear(34 * 34, 10 * 10)
+        # self.fc_ops = nn.Linear(34, 18)
+        # self.fc_adj = nn.Linear(34 * 34, 18 * 18)
+
     def get_gcs(self, dims, dropout):
         gcs = []
         for k in range(len(dims)-1):
@@ -50,9 +55,18 @@ class VAEncoder(nn.Module):
         if self.normalize:
             adj = normalize_adj(adj)
 
-        # Adjust ops dimension to (32, 10, 11) and adj dimension to (32, 10, 10)
-        adjusted_ops = self.conv_ops(ops.permute(0, 2, 1)).permute(0, 2, 1)
-        adjusted_adj = self.conv_adj(adj.unsqueeze(1)).squeeze(1)
+        # # Use conv layer to adjust ops dimension from (32, 34, 11) to (32, 10, 11)
+        # adjusted_ops = self.conv_ops(ops.permute(0, 2, 1)).permute(0, 2, 1)
+        # # Use conv layer to adjust adj dimension from (32, 34, 34) to (32, 10, 10)
+        # adjusted_adj = self.conv_adj(adj.unsqueeze(1)).squeeze(1)
+
+        # Use fc layer to adjust ops dimension from (32, 34, 11) to (32, 10, 11)
+        adjusted_ops = self.fc_ops(ops.view(-1, 34))
+        adjusted_ops = adjusted_ops.view(-1, 10, 11)
+        # Use fc layer to adjust adj dimension from (32, 34, 34) to (32, 10, 10)
+        adjusted_adj = adj.view(adj.size(0), -1)
+        adjusted_adj = self.fc_adj(adjusted_adj)
+        adjusted_adj = adjusted_adj.view(adjusted_adj.size(0), 10, 10)
 
         x = adjusted_ops
         for gc in self.gcs[:-1]:
@@ -77,14 +91,28 @@ class Decoder(nn.Module):
         self.deconv_ops = nn.ConvTranspose1d(input_dim, input_dim, kernel_size=7, stride=3, padding=1, output_padding=2)
         self.deconv_adj = nn.ConvTranspose2d(1, 1, kernel_size=7, stride=3, padding=1, output_padding=2)
 
+        self.fc_ops = nn.Linear(10, 34)
+        self.fc_adj = nn.Linear(10 * 10, 34 * 34)
+        # self.fc_ops = nn.Linear(18, 34)
+        # self.fc_adj = nn.Linear(18 * 18, 34 * 34)
+
     def forward(self, embedding):
         embedding = F.dropout(embedding, p=self.dropout, training=self.training)
         adjusted_ops = self.weight(embedding)
         adjusted_adj = torch.matmul(embedding, embedding.permute(0, 2, 1))
 
-        # Use transposed conv to re-adjust ops dimension to (32, 34, 11) and adj dimension to (32, 34, 34)
-        ops = self.deconv_ops(adjusted_ops.permute(0, 2, 1)).permute(0, 2, 1)
-        adj = self.deconv_adj(adjusted_adj.unsqueeze(1)).squeeze(1)
+        # # Use transposed conv to re-adjust ops dimension from (32, 10, 11) to (32, 34, 11)
+        # ops = self.deconv_ops(adjusted_ops.permute(0, 2, 1)).permute(0, 2, 1)
+        # # Use transposed conv to re-adjust adj dimension from (32, 10, 10) to (32, 34, 34)
+        # adj = self.deconv_adj(adjusted_adj.unsqueeze(1)).squeeze(1)
+
+        # Use fc layer to re-adjust ops dimension from (32, 10, 11) to (32, 34, 11)
+        ops = self.fc_ops(adjusted_ops.view(-1, 10))
+        ops = ops.view(-1, 34, 11)
+        # Use fc layer to re-adjust adj dimension from (32, 10, 10) to (32, 34, 34)
+        adj = adjusted_adj.view(adjusted_adj.size(0), -1)
+        adj = self.fc_adj(adj)
+        adj = adj.view(adj.size(0), 34, 34)
 
         ops_recon = self.activation_adj(ops)
         adj_recon = self.activation_adj(adj)
@@ -108,6 +136,7 @@ class VAEReconstructed_Loss(object):
         loss_ops = self.loss_ops(ops_recon, ops)
         loss_adj = self.loss_adj(adj_recon.double(), adj.double())
         loss = self.w_ops * loss_ops + self.w_adj * loss_adj
+        # loss = self.w_ops * loss_ops
         KLD = -0.5 / (ops.shape[0] * ops.shape[1]) * torch.mean(torch.sum(1 + 2 * logvar - mu.pow(2) - logvar.exp().pow(2), 2))
         return loss + KLD
 

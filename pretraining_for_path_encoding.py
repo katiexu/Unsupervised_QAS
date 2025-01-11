@@ -149,7 +149,7 @@ if __name__ == '__main__':
                         help='latent points for validaty check (default: 10000)')
 
     args = parser.parse_args()
-    args.epochs = 1000
+    # args.epochs = 1000
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
