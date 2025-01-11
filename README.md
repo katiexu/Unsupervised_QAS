@@ -1,18 +1,8 @@
 # Unsupervised_QAS for QWAS with data uploading function (data & U3 combined)
 
-## Main tasks
-### Part 1: Pretraining
-1) _gen_QWAS_circ_dataset.py_:
-   * Generate a certain amount (5w) of unique random VQCs using QWAS search spaces.
-2) _pretraining.py_:
-   * Train the generated VQCs with GVAE model and save the model parameters.
-### Part 2: Compare the performance of GVAE generated circuits and the original QWAS ones (_run.py_)
-1) _translate_selected_circuits.py_:
-   * Translate the selected QWAS circuits into the format required for loading the GVAE model. 
-2) _QWAS_original_performance.py_:
-   * Train the selected QWAS circuits (for 30 epochs) and obtain test acc on MNIST datasets for comparison.
-3) _gen_circuits_with_noise.py_:
-   * Generate new circuits by adding noises to latent representations of the selected QWAS circuits.
-4) _test_performance.py_:
-   * Train the generated new circuits (for 30 epochs) and obtain test acc on MNIST dataset.
+1) Create a 'data' folder and put 'data_4_qubits.json' in it.
+
+2) Run 'pretraining_for_path_encoding.py' for the one-layer configuration.
+
+3) In 'model_for_path_encoding.py', you can choose to compress and restore the ops and adj using either the conv/transconv layers or the fc layers.
 
